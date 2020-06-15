@@ -4,9 +4,8 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    const user = new User(req.body);
-    await user.register();
-    res.json({token: jwt.sign({_id: user.data._id}, process.env.JWTSECRET, {expiresIn: '7d'})});
+    await User.register(req.body);
+    res.json({token: jwt.sign({_id: req.body.userId}, process.env.JWTSECRET, {expiresIn: '7d'})});
   } catch(error) {
     res.json({error});
   }

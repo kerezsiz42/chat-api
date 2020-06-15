@@ -1,88 +1,100 @@
 const usersCollection = require('../db').db().collection('users');
 const chatsCollection = require('../db').db().collection('chats');
+// try the same with regular expressions in the future
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const ObjectID = require('mongodb').ObjectID;
 
 class User {
-  constructor(data) {
-    this.data = data;
-    this.errors = [];
-  }
-
-  validate() {
+  static validateUsername(username) {
     return new Promise(async (resolve, reject) => {
-      if(this.data.username == '') {
-        this.errors.push('You must provide a username.');
+      const errors = [];
+      if(username != '' && username.length < 4) {
+        errors.push('Username should be at least 4 characters long.');
       }
-      if(this.data.username != '' && !validator.isAlphanumeric(this.data.username)) {
-        this.errors.push('Username can contain only letters and numbers.');
+      if(username.length > 30) {
+        errors.push('Username cannot exceed length of 30 characters.');
       }
-      if(!validator.isEmail(this.data.email)) {
-        this.errors.push('You must provide a valid email.');
+      if(username == '') {
+        errors.push('You must provide a username.');
       }
-      if(this.data.password == '') {
-        this.errors.push('You must provide a password.');
+      if(username != '' && !validator.isAlphanumeric(username)) {
+        errors.push('Username can contain only letters and numbers.');
       }
-      if(this.data.password != '' && this.data.password.length < 8) {
-        this.errors.push('Password should be at least 8 characters long.');
-      }
-      if(this.data.password.length > 50) {
-        this.errors.push('Password cannot exceed length of 50 characters.');
-      }
-      if(this.data.username != '' && this.data.username.length < 4) {
-        this.errors.push('Username should be at least 4 characters long.');
-      }
-      if(this.data.username.length > 30) {
-        this.errors.push('Username cannot exceed length of 30 characters.');
-      }
-      if(
-          this.data.username.length > 2 &&
-          this.data.username.length < 31 &&
-          validator.isAlphanumeric(this.data.username)
-        ) {
-        const usernameExists = await usersCollection.findOne({username: this.data.username});
+      if(username.length > 2 && username.length < 31 && validator.isAlphanumeric(username)) {
+        const usernameExists = await usersCollection.findOne({username});
         if(usernameExists) {
-          this.errors.push('This username is already taken.');
+          errors.push('This username is already taken.');
         }
       }
-      if(validator.isEmail(this.data.email)) {
-        const emailExists = await usersCollection.findOne({email: this.data.email});
-        if(emailExists) {
-          this.errors.push('This email is already in use.');
-        }
-      }
-      resolve();
+      resolve(errors);
     });
   }
 
-  cleanUp() {
-    if(typeof(this.data.username) != 'string') {
-      this.data.username = '';
+  static validatePassword(password) {
+    const errors = [];
+    if(password == '') {
+      errors.push('You must provide a password.');
     }
-    if(typeof(this.data.email) != 'string') {
-      this.data.email = '';
+    if(password != '' && password.length < 8) {
+      errors.push('Password should be at least 8 characters long.');
     }
-    if(typeof(this.data.password) != 'string') {
-      this.data.password = '';
+    if(password.length > 50) {
+      errors.push('Password cannot exceed length of 50 characters.');
     }
-    this.data = {
-      username: this.data.username.trim().toLowerCase(),
-      email: this.data.email.trim().toLowerCase(),
-      password: this.data.password
+    return errors;
+  }
+  
+  static validateEmail(email) {
+    return new Promise(async (resolve, reject) => {
+      const errors = [];
+      if(validator.isEmail(email)) {
+        const emailExists = await usersCollection.findOne({email});
+        if(emailExists) {
+          errors.push('This email is already in use.');
+        }
+      }
+      if(!validator.isEmail(email)) {
+        errors.push('You must provide a valid email.');
+      }
+      resolve(errors);
+    });
+  }
+
+  static cleanUp(data) {
+    let { username, email, password } = data;
+    if(typeof(username) != 'string') {
+      username = '';
+    }
+    if(typeof(email) != 'string') {
+      email = '';
+    }
+    if(typeof(password) != 'string') {
+      password = '';
+    }
+    username.trim().toLowerCase();
+    email.trim().toLowerCase();
+    return {
+      username,
+      email,
+      password
     }
   }
 
-  register() {
+  static register(data) {
     return new Promise(async (resolve, reject) => {
-      this.cleanUp();
-      await this.validate();
-      if(!this.errors.length) {
-        this.data.password = bcrypt.hashSync(this.data.password, 10);
-        await usersCollection.insertOne(this.data);
+      let errors = [];
+      data = this.cleanUp(data);
+      errors = errors.concat(this.validatePassword(data.password));
+      errors = errors.concat(await this.validateEmail(data.email));
+      errors = errors.concat(await this.validateUsername(data.username));
+      
+      if(!errors.length) {
+        data.password = bcrypt.hashSync(data.password, 10);
+        await usersCollection.insertOne(data);
         resolve('Successfully registered user.');
       } else {
-        reject(this.errors);
+        reject(errors);
       }
     });
   }
@@ -107,7 +119,6 @@ class User {
   static findByUsername(username) {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log("hello")
         const user = await usersCollection.findOne(
           {username},
           {projection: {password: 0}}
@@ -152,6 +163,17 @@ class User {
         }
       } catch {
         reject('Please try again later.');
+      }
+    });
+  }
+  
+  static changeUsername(userId, newUsername) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const user = this.findById(userId);
+        resolve();
+      } catch {
+        reject();
       }
     });
   }
