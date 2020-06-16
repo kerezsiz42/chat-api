@@ -11,9 +11,10 @@ router.all('/', (req, res) => {
 router.post('/register', userCtl.register);
 router.post('/login', userCtl.gate);
 router.post('/deleteAccount', userCtl.gate, userCtl.deleteUser);
-
 router.post('/changeUsername', userCtl.gate, userCtl.changeUsername);
+
 router.post('/searchUsers', userCtl.gate, userCtl.searchByUsername);
+router.post('/changePassword', userCtl.gate, userCtl.changePassword);
 
 // Chat related
 router.post('/createChat', userCtl.gate, chatCtl.createChat);

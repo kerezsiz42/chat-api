@@ -72,7 +72,7 @@ class User {
     if(typeof(password) != 'string') {
       password = '';
     }
-    username.trim().toLowerCase();
+    username.trim();
     email.trim().toLowerCase();
     return {
       username,
@@ -99,14 +99,14 @@ class User {
     });
   }
 
-  login() {
+  static login(data) {
     return new Promise(async (resolve, reject) => {
-      this.cleanUp();
+      data = this.cleanUp(data);
       try {
-        const attemptedUser = await usersCollection.findOne({$or: [{username: this.data.username}, {email: this.data.email}]});
-        if(attemptedUser && bcrypt.compareSync(this.data.password, attemptedUser.password)) {
-          this.data = attemptedUser;
-          resolve('Successfully logged in.');
+        const attemptedUser = await usersCollection.findOne({$or: [{username: data.username}, {email: data.email}]});
+        if(attemptedUser && bcrypt.compareSync(data.password, attemptedUser.password)) {
+          attemptedUser.password = undefined;
+          resolve(attemptedUser);
         } else {
           reject('Invalid username or password.');
         }
@@ -167,13 +167,48 @@ class User {
     });
   }
   
-  static changeUsername(userId, newUsername) {
+  static changeUsername(data) {
     return new Promise(async (resolve, reject) => {
       try {
-        const user = this.findById(userId);
-        resolve();
+        if(typeof(data.newUsername) != 'string') {
+          data.newUsername = '';
+        }
+        data.newUsername.trim();
+        const errors = await this.validateUsername(data.newUsername);
+        if(!errors.length) {
+          await usersCollection.updateOne(
+            {_id: new ObjectID(data.userId)},
+            {$set: {username: data.newUsername}}
+          );
+          resolve('Username changed.');
+        } else {
+          reject(errors);
+        }
       } catch {
-        reject();
+        reject('Please try again later.');
+      }
+    });
+  }
+
+  static changePassword(data) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if(typeof(data.newPassword) != 'string') {
+          data.newPassword = '';
+        }
+        const errors = this.validatePassword(data.newPassword);
+        if(!errors.length) {
+          data.newPassword = bcrypt.hashSync(data.newPassword, 10);
+          await usersCollection.updateOne(
+            {_id: new ObjectID(data.userId)},
+            {$set: {password: data.newPassword}}
+          );
+          resolve('Password changed.');
+        } else {
+          reject(errors);
+        }
+      } catch {
+        reject('Please try again later.');
       }
     });
   }

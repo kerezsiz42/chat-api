@@ -23,9 +23,8 @@ exports.gate = async (req, res, next) => {
       await User.findById(req.body.userId);
       next();
     } else {
-      const user = new User(req.body);
-      await user.login();
-      res.json({token: jwt.sign({_id: user.data._id}, process.env.JWTSECRET, {expiresIn: '7d'})});
+      req.body = await User.login(req.body);
+      res.json({token: jwt.sign({_id: req.body._id}, process.env.JWTSECRET, {expiresIn: '7d'})});
     }
   } catch(error) {
     res.json({error});
@@ -44,8 +43,8 @@ exports.deleteUser = async (req, res) => {
         throw error;
       });
     });
-    const result = await User.delete(req.body.userId);
-    res.json({success: result});
+    const success = await User.delete(req.body.userId);
+    res.json({success});
   } catch(error) {
     res.json({error});
   }
@@ -53,7 +52,17 @@ exports.deleteUser = async (req, res) => {
 
 exports.changeUsername = async (req, res) => {
   try {
-    
+    const success = await User.changeUsername(req.body);
+    res.json({success});
+  } catch(error) {
+    res.json({error})
+  }
+}
+
+exports.changePassword = async (req, res) => {
+  try {
+    const success = await User.changePassword(req.body);
+    res.json({success});
   } catch(error) {
     res.json({error})
   }
