@@ -212,6 +212,23 @@ class User {
       }
     });
   }
+
+  static searchByUsername(searchTerm) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Create index for usernames manually if it does not exists in DB
+        const result = await usersCollection.aggregate([
+          {$match: {username: {$regex: new RegExp(searchTerm)}}},
+          {$sort: {username: 1}},
+          {$limit: 10},
+          {$project: {password: 0, email: 0}}
+        ]).toArray();
+        resolve(result);
+      } catch {
+        reject('Please try again later.');
+      }
+    });
+  }
 }
 
 module.exports = User;

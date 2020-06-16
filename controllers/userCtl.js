@@ -70,7 +70,8 @@ exports.changePassword = async (req, res) => {
 
 exports.searchByUsername = async (req, res) => {
   try {
-
+    const success = await User.searchByUsername(req.body.searchTerm);
+    res.json({success});
   } catch(error) {
     res.json({error})
   }

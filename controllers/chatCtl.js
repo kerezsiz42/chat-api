@@ -41,10 +41,19 @@ exports.getChatsOfUser = async (req, res) => {
   }
 }
 
-exports.loadMessagesBefore = async (req, res) => {
+exports.loadLastMessages = async (req, res) => {
   try {
-    
-    res.json({});
+    const arrayOfMessages = await Chat.loadLastMessages(req.body.chatId, req.body.messageTime, req.body.messageCount);
+    res.json({success: arrayOfMessages});
+  } catch(error) {
+    res.json({error});
+  }
+}
+
+exports.sendMessage = async (req, res) => {
+  try {
+    const success = await Chat.addMessage(req.body.userId, req.body.chatId, req.body.message);
+    res.json({success});
   } catch(error) {
     res.json({error});
   }

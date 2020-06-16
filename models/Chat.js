@@ -62,14 +62,11 @@ class Chat {
   static leave(userId, chatId) {
     return new Promise(async (resolve, reject) => {
       try {
-
-        //Rethink
         const chat = await chatsCollection.findOneAndUpdate(
           {_id: new ObjectID(chatId)},
           {$pull: {members: new ObjectID(userId)}},
           {returnOriginal: false}
         );
-        console.log(chat);
         if(chat.value) {
           resolve(chat.value.members.length);
         } else {
@@ -131,10 +128,6 @@ class Chat {
     });
   }
 
-  static showMessagesBetweenDates(chatId, firstDate, lastDate) {
-
-  }
-
   static addMessage(userId, chatId, message) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -152,6 +145,19 @@ class Chat {
         } else {
           reject('Error while trying to save message.');
         }
+      } catch {
+        reject('Please try again later.');
+      }
+    });
+  }
+
+  static loadLastMessages(chatId, messageTime, messageCount) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const chat = await chatsCollection.findOne(
+          {_id: new ObjectID(chatId)}
+        );
+        console.log(chat.messages);
       } catch {
         reject('Please try again later.');
       }
