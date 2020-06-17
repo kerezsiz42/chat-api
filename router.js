@@ -17,11 +17,11 @@ router.post('/searchUsers', userCtl.gate, userCtl.searchByUsername);
 
 // Chat related
 router.post('/createChat', userCtl.gate, chatCtl.createChat);
-router.post('/addUserToChat', userCtl.gate, chatCtl.addUser);
+router.post('/addUserToChat', userCtl.gate, chatCtl.isMember, chatCtl.addUser);
 router.post('/leaveChat', userCtl.gate, chatCtl.removeUser);
 router.post('/myChats', userCtl.gate, chatCtl.getChatsOfUser);
 
-router.post('/loadLastMessages', userCtl.gate, chatCtl.loadLastMessages);
-router.post('/sendMessage', userCtl.gate, chatCtl.sendMessage);
+router.post('/loadLastMessages', userCtl.gate, chatCtl.isMember, chatCtl.loadLastMessages);
+router.post('/sendMessage', userCtl.gate, chatCtl.isMember, chatCtl.sendMessage);
 
 module.exports = router;

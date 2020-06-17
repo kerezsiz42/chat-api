@@ -1,25 +1,38 @@
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
-const handleMessage = () => {
-
-}
-
-const connectUserToChat = (token, chatId) => {
-  const data = jwt.verify(token, process.env.JWTSECRET);
-  console.log(data._id);
-}
+const Chat = require('../models/Chat');
 
 exports.connection = (ws, req, wss) => {
-  ws.on('message', (data) => {
+  const user = {
+    authorizedChats: [],
+    userId: false
+  }
+
+  ws.on('message', async data => {
     data = JSON.parse(data);
+
     if(data.type == 'auth') {
-      connectUserToChat(data.token, 'chatId');
-    } else if(data.type == 'msg') {
-      handleMessage();
-    } else {
-      ws.terminate();
+      try {
+        const userId = jwt.verify(data.token, process.env.JWTSECRET, (err, decoded) => {
+          if(err) {
+            throw 'Invalid token';
+          }
+          return decoded._id;
+        });
+        await User.findById(userId);
+        user.userId = userId;
+      } catch(err) {
+        ws.send(err);
+      }
+    }
+
+    if(data.type == 'join') {
+      
+    }
+
+    if(data.type == 'msg') {
+      
     }
   });
 }

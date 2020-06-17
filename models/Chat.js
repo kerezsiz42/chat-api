@@ -10,6 +10,7 @@ class Chat {
           reject('Chat room with the same name already exists.');
         } else {
           const chat = {
+            // Sanitize
             chatName,
             members: [new ObjectID(userId)],
             messages: [],
@@ -88,7 +89,7 @@ class Chat {
         if(chat) {
           resolve('User is part of this chat.');
         } else {
-          reject('You have no permission to modify members of this chat room.');
+          reject('You have no permission to do anything in this chat room.');
         }
       } catch {
         reject('Please try again later.');
@@ -133,14 +134,15 @@ class Chat {
       try {
         const data = {
           userId: new ObjectID(userId),
+          // Sanitize
           msg: message,
-          time: new Date()
+          time: new Date().getTime()
         }
         const result = await chatsCollection.updateOne(
           {_id: new ObjectID(chatId)},
           {$push: {messages: data}}
         );
-        if(result.updatedCount) {
+        if(result.modifiedCount) {
           resolve('Added new message.');
         } else {
           reject('Error while trying to save message.');
@@ -151,13 +153,35 @@ class Chat {
     });
   }
 
-  static loadLastMessages(chatId, messageTime, messageCount) {
+  static loadLastMessages(chatId, messageCount, messageTime) {
     return new Promise(async (resolve, reject) => {
       try {
         const chat = await chatsCollection.findOne(
           {_id: new ObjectID(chatId)}
         );
-        console.log(chat.messages);
+        const length = chat.messages.length;
+        if(messageCount == undefined) {
+          messageCount = 1;
+        }
+        if(messageCount > length) {
+          reject('Invalid input.');
+        }
+        if(messageTime == undefined) {
+          resolve(chat.messages.slice(length - messageCount, length));
+        } else {
+          // MessageTime is the message we want to retrieve messages before.
+          messageTime = new Date(parseInt(messageTime)).getTime();
+          let index = -1;
+          for(let i = length - 1; i >= 0 && index == -1; i--) {
+            if(chat.messages[i].time == messageTime) {
+              index = i;
+            }
+          }
+          if(messageCount > index || index == -1) {
+            reject('Invalid input.');
+          }
+          resolve(chat.messages.slice(index - messageCount, index));
+        }
       } catch {
         reject('Please try again later.');
       }

@@ -170,6 +170,7 @@ class User {
   static changeUsername(data) {
     return new Promise(async (resolve, reject) => {
       try {
+        // Sanitize?
         if(typeof(data.newUsername) != 'string') {
           data.newUsername = '';
         }

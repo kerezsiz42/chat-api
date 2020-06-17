@@ -11,10 +11,17 @@ exports.createChat = async (req, res) => {
 
 exports.addUser = async (req, res) => {
   try {
-    console.log(req.body)
+    const success = await Chat.addUser(req.body.otherUserId, req.body.chatId);
+    res.json({success});
+  } catch(error) {
+    res.json({error});
+  }
+}
+
+exports.isMember = async (req, res, next) => {
+  try {
     await Chat.isMember(req.body.userId, req.body.chatId);
-    const result = await Chat.addUser(req.body.otherUserId, req.body.chatId);
-    res.json({success: result});
+    next();
   } catch(error) {
     res.json({error});
   }
@@ -43,7 +50,7 @@ exports.getChatsOfUser = async (req, res) => {
 
 exports.loadLastMessages = async (req, res) => {
   try {
-    const arrayOfMessages = await Chat.loadLastMessages(req.body.chatId, req.body.messageTime, req.body.messageCount);
+    const arrayOfMessages = await Chat.loadLastMessages(req.body.chatId, req.body.messageCount, req.body.messageTime);
     res.json({success: arrayOfMessages});
   } catch(error) {
     res.json({error});
