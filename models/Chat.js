@@ -89,7 +89,7 @@ class Chat {
         if(chat) {
           resolve('User is part of this chat.');
         } else {
-          reject('You have no permission to do anything in this chat room.');
+          reject('You have no permission to access this chat room.');
         }
       } catch {
         reject('Please try again later.');

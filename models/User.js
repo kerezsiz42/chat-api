@@ -4,6 +4,7 @@ const chatsCollection = require('../db').db().collection('chats');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const ObjectID = require('mongodb').ObjectID;
+const jwt = require('jsonwebtoken');
 
 class User {
   static validateUsername(username) {
@@ -167,19 +168,19 @@ class User {
     });
   }
   
-  static changeUsername(data) {
+  static changeUsername(userId, newUsername) {
     return new Promise(async (resolve, reject) => {
       try {
         // Sanitize?
-        if(typeof(data.newUsername) != 'string') {
-          data.newUsername = '';
+        if(typeof(newUsername) != 'string') {
+          newUsername = '';
         }
-        data.newUsername.trim();
-        const errors = await this.validateUsername(data.newUsername);
+        newUsername.trim();
+        const errors = await this.validateUsername(newUsername);
         if(!errors.length) {
           await usersCollection.updateOne(
-            {_id: new ObjectID(data.userId)},
-            {$set: {username: data.newUsername}}
+            {_id: new ObjectID(userId)},
+            {$set: {username: newUsername}}
           );
           resolve('Username changed.');
         } else {
@@ -191,18 +192,18 @@ class User {
     });
   }
 
-  static changePassword(data) {
+  static changePassword(userId, newPassword) {
     return new Promise(async (resolve, reject) => {
       try {
-        if(typeof(data.newPassword) != 'string') {
-          data.newPassword = '';
+        if(typeof(newPassword) != 'string') {
+          newPassword = '';
         }
-        const errors = this.validatePassword(data.newPassword);
+        const errors = this.validatePassword(newPassword);
         if(!errors.length) {
-          data.newPassword = bcrypt.hashSync(data.newPassword, 10);
+          newPassword = bcrypt.hashSync(newPassword, 10);
           await usersCollection.updateOne(
-            {_id: new ObjectID(data.userId)},
-            {$set: {password: data.newPassword}}
+            {_id: new ObjectID(userId)},
+            {$set: {password: newPassword}}
           );
           resolve('Password changed.');
         } else {
@@ -227,6 +228,23 @@ class User {
         resolve(result);
       } catch {
         reject('Please try again later.');
+      }
+    });
+  }
+
+  static authenticate(token) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const userId = jwt.verify(token, process.env.JWTSECRET, (error, decoded) => {
+          if(error) {
+            throw 'Invalid token';
+          }
+          return decoded._id;
+        });
+        await User.findById(userId);
+        resolve(userId);
+      } catch(error) {
+        reject(error);
       }
     });
   }

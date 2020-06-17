@@ -3,9 +3,10 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Chat = require('../models/Chat');
 
+
 exports.connection = (ws, req, wss) => {
-  const user = {
-    authorizedChats: [],
+  const state = {
+    chatIds: [],
     userId: false
   }
 
@@ -14,25 +15,32 @@ exports.connection = (ws, req, wss) => {
 
     if(data.type == 'auth') {
       try {
-        const userId = jwt.verify(data.token, process.env.JWTSECRET, (err, decoded) => {
-          if(err) {
-            throw 'Invalid token';
-          }
-          return decoded._id;
-        });
-        await User.findById(userId);
-        user.userId = userId;
-      } catch(err) {
-        ws.send(err);
+        state.userId = await User.authenticate(data.token);
+        ws.send(JSON.stringify({success: `${state.userId} authenticated.`}));
+        console.log(`${state.userId} authenticated.`);
+      } catch(error) {
+        ws.send(JSON.stringify({error}));
+        ws.terminate();
       }
     }
 
-    if(data.type == 'join') {
-      
+    if(data.type == 'join' && state.userId && !state.chatIds.includes(data.chatId)) {
+      try {
+        await Chat.isMember(data.userId, data.chatId);
+        state.chatIds.push(data.chatId);
+        ws.send(JSON.stringify({success: `${state.userId} joined ${state.chatIds[state.chatIds.length-1]}`}));
+        console.log(`${state.userId} joined ${state.chatIds[state.chatIds.length-1]}`);
+      } catch(error) {
+        ws.send(JSON.stringify({error}));
+      }
     }
 
     if(data.type == 'msg') {
-      
+      try {
+
+      } catch(error) {
+        ws.send(JSON.stringify({error}));
+      }
     }
   });
 }
