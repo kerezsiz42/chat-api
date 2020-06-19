@@ -1,6 +1,5 @@
 <script>
 
-
 const login = (username, password) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -9,11 +8,11 @@ const login = (username, password) => {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ username, password })
       });
-      const data = response.json();
-      if(data.token != 'undefined') {
-        resolve(data);
+      const data = await response.json();
+      if(data.token != undefined) {
+        resolve(data.token);
       } else {
-        reject(data);
+        reject('No token received.');
       }
     } catch(error) {
       reject(error);
@@ -21,21 +20,17 @@ const login = (username, password) => {
   });
 }
 
-const connectToChat = (token, chatId) => {
+const connectToServer = (token) => {
   const ws = new WebSocket('ws://localhost');
   ws.onopen = () => {
-    console.log(`Connecting to chat ${chatId} with token ${token}`);
-    const data = {
-      type: 'auth',
-      token: token,
-      chatId: chatId
-    }
+    console.log(`Connecting to server with token: ${token}`);
+    const data = {token};
     ws.send(JSON.stringify(data));
   }
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    console.log(data.type + ': ' + data.payload);
+    console.log(data);
   }
 
   ws.onclose = () => {
@@ -43,6 +38,10 @@ const connectToChat = (token, chatId) => {
   }
 }
 
+const init = async () => {
+  const token = await login('kezoki', 'qwertzqwertz');
+  connectToServer(token);
+}
 
 
 </script>

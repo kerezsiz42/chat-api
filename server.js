@@ -7,6 +7,6 @@ server.use(express.urlencoded({extended: true}));
 server.use(express.json());
 server.use('/', require('./router'));
 
-server.ws('/', (ws, req) => socketCtl.connection(ws, req, wss));
+server.ws('/', ws => socketCtl.connection(ws, wss));
 
 module.exports = server;

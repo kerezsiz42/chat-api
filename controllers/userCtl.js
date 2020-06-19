@@ -14,9 +14,7 @@ exports.register = async (req, res) => {
 exports.gate = async (req, res, next) => {
   try {
     if(req.body.token) {
-      console.log(req.body);
       req.body.userId = await User.authenticate(req.body.token);
-      console.log(req.body);
       next();
     } else {
       req.body = await User.login(req.body);

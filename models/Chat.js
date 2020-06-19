@@ -160,16 +160,16 @@ class Chat {
           {_id: new ObjectID(chatId)}
         );
         const length = chat.messages.length;
-        if(messageCount == undefined) {
-          messageCount = 1;
-        }
         if(messageCount > length) {
           reject('Invalid input.');
+        }
+        if(messageCount == undefined) {
+          messageCount = 1;
         }
         if(messageTime == undefined) {
           resolve(chat.messages.slice(length - messageCount, length));
         } else {
-          // MessageTime is the message we want to retrieve messages before.
+          // MessageTime is time of the message we want to retrieve messages before.
           messageTime = new Date(parseInt(messageTime)).getTime();
           let index = -1;
           for(let i = length - 1; i >= 0 && index == -1; i--) {

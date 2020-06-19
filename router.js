@@ -26,5 +26,6 @@ router.post('/leaveChat', userCtl.gate, chatCtl.removeUser);
 router.post('/myChats', userCtl.gate, chatCtl.getChatsOfUser);
 router.post('/loadLastMessages', userCtl.gate, chatCtl.isMember, chatCtl.loadLastMessages);
 router.post('/sendMessage', userCtl.gate, chatCtl.isMember, chatCtl.sendMessage);
+//router.post('/changeChatName', userCtl.gate, chatCtl.isMember, chatCtl.changeChatName);
 
 module.exports = router;
