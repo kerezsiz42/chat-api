@@ -1,12 +1,15 @@
 const express = require('express');
 const server = express();
 const wss = require('express-ws')(server);
-const socketCtl = require('./controllers/socketCtl');
+const socketCtl = require('./controllers/socketsCtl');
+const Sockets = require('./models/Sockets');
 
 server.use(express.urlencoded({extended: true}));
 server.use(express.json());
 server.use('/', require('./router'));
 
-server.ws('/', ws => socketCtl.connection(ws, wss));
+const socketsChache = new Sockets(); 
+
+server.ws('/', ws => socketCtl.connection(ws, wss, socketsChache));
 
 module.exports = server;

@@ -1,3 +1,6 @@
+<input></input>
+<button>Click on me!</button>
+
 <script>
 
 const login = (username, password) => {
@@ -22,10 +25,9 @@ const login = (username, password) => {
 
 const connectToServer = (token) => {
   const ws = new WebSocket('ws://localhost');
+
   ws.onopen = () => {
-    console.log(`Connecting to server with token: ${token}`);
-    const data = {token};
-    ws.send(JSON.stringify(data));
+    ws.send(JSON.stringify({token}));
   }
 
   ws.onmessage = (event) => {
@@ -34,8 +36,12 @@ const connectToServer = (token) => {
   }
 
   ws.onclose = () => {
-    console.log('Server closed the connection.');
+    console.log('Connection closed.');
   }
+
+  document.querySelector('button').addEventListener('click', () => {
+    ws.send(JSON.stringify({chatId: '5eec51e4a088e416bc31e863', message: document.querySelector('input').value}));
+  });
 }
 
 const init = async () => {
