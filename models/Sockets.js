@@ -5,15 +5,15 @@ class Sockets {
     this.data = {};
   }
 
-  connectToRoom(chatId, state, ws) {
+  connectToRoom(chatId, ws) {
     return new Promise(async (resolve, reject) => {
       try {
-        await Chat.isMember(state.userId, chatId);
+        await Chat.isMember(ws.userId, chatId);
         if(!this.data.hasOwnProperty(chatId)) {
           this.data[chatId] = {};
         }
-        this.data[chatId][state.userId] = ws;
-        state.chatId = chatId;
+        this.data[chatId][ws.userId] = ws;
+        ws.chatId = chatId;
         resolve('Client connected.');
       } catch(err) {
         reject(err);
@@ -34,29 +34,29 @@ class Sockets {
     }
   }
 
-  disconnectFromRoom(state) {
+  disconnectFromRoom(ws) {
     try {
-      delete this.data[state.chatId][state.userId];
-      if(this.isChatEmpty(state.chatId)) {
-        delete this.data[state.chatId];
+      delete this.data[ws.chatId][ws.userId];
+      if(this.isChatEmpty(ws.chatId)) {
+        delete this.data[ws.chatId];
       }
-      state.chatId = null;
+      ws.chatId = null;
     } catch (err) {
       console.log(err);
     }
   }
 
-  handleMessage(chatId, payload, state, ws) {
+  handleMessage(chatId, payload, ws) {
     return new Promise(async (resolve, reject) => {
       try {
         if(payload == undefined || payload == '') {
           reject('No payload.');
         }
-        if(state.chatId != chatId) {
-          this.disconnectFromRoom(state);
-          await this.connectToRoom(chatId, state, ws);
+        if(ws.chatId != chatId) {
+          this.disconnectFromRoom(ws);
+          await this.connectToRoom(chatId, ws);
         }
-        const message = await Chat.addMessage(state.userId, state.chatId, payload);
+        const message = await Chat.addMessage(ws.userId, ws.chatId, payload);
         resolve(message);
       } catch(err) {
         reject(err);

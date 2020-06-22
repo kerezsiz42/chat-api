@@ -35,8 +35,8 @@ const connectToServer = (token, chatId) => {
     console.log('ping');
   });
 
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
     console.log(data);
   }
 
