@@ -10,6 +10,6 @@ server.use('/', require('./router'));
 
 const socketsChache = new Sockets(); 
 
-server.ws('/', ws => socketCtl.connection(ws, wss, socketsChache));
+server.ws('/', ws => socketCtl.connection(ws, socketsChache));
 
 module.exports = server;

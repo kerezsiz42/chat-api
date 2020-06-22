@@ -59,8 +59,8 @@ exports.loadLastMessages = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
   try {
-    const success = await Chat.addMessage(req.body.userId, req.body.chatId, req.body.message);
-    res.json({success});
+    await Chat.addMessage(req.body.userId, req.body.chatId, req.body.message);
+    res.json({success: 'Message saved.'});
   } catch(error) {
     res.json({error});
   }

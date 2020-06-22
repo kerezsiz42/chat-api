@@ -1,5 +1,6 @@
+
 <input></input>
-<button>Click on me!</button>
+<button>Send</button>
 
 <script>
 
@@ -23,12 +24,16 @@ const login = (username, password) => {
   });
 }
 
-const connectToServer = (token) => {
-  const ws = new WebSocket('ws://localhost');
+const connectToServer = (token, chatId) => {
+  const ws = new WebSocket('ws://192.168.100.7');
 
-  ws.onopen = () => {
-    ws.send(JSON.stringify({token}));
-  }
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({token, chatId}));
+  });
+
+  ws.addEventListener('ping', () => {
+    console.log('ping');
+  });
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
@@ -40,13 +45,13 @@ const connectToServer = (token) => {
   }
 
   document.querySelector('button').addEventListener('click', () => {
-    ws.send(JSON.stringify({chatId: '5eec51e4a088e416bc31e863', message: document.querySelector('input').value}));
+    ws.send(JSON.stringify({chatId, payload: document.querySelector('input').value}));
   });
 }
 
-const init = async () => {
-  const token = await login('kezoki', 'qwertzqwertz');
-  connectToServer(token);
+const init = async (username, password) => {
+  const token = await login(username, password);
+  connectToServer(token, '5eec51e4a088e416bc31e863');
 }
 
 

@@ -143,8 +143,7 @@ class Chat {
           {$push: {messages: data}}
         );
         if(result.modifiedCount) {
-          // Maybe retreive the message
-          resolve('Added new message.');
+          resolve(data);
         } else {
           reject('Error while trying to save message.');
         }
