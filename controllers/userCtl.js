@@ -71,7 +71,7 @@ exports.searchByUsername = async (req, res) => {
   }
 }
 
-exports.getUserInfo = async (req, res) => {
+exports.findById = async (req, res) => {
   try {
     const success = await User.findById(req.body.otherUser);
     res.json({success});

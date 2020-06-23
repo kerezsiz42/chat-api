@@ -5,16 +5,16 @@ exports.onmessage = async (data, ws, sockets) => {
   data = JSON.parse(data);
   console.log(data);
   try {
-    if(ws.userId != null) {
+    if(ws.userId == null) {
+      ws.userId = await User.authenticate(data.token);
+      const success = await sockets.connectToRooms(ws);
+      ws.send(JSON.stringify({success}));
+    } else {
       const message = await sockets.handleMessage(data.chatId, data.payload, ws);
-      const clients = sockets.getClientsInRoom(ws.chatId, ws.userId);
+      const clients = sockets.getClientsInRoom(data.chatId);
       clients.forEach(client => {
         client.send(JSON.stringify({message}));
       });
-    } else {
-      ws.userId = await User.authenticate(data.token);
-      const success = await sockets.connectToRoom(data.chatId, ws);
-      ws.send(JSON.stringify({success}));
     }
   } catch(error) {
     console.log(error);
@@ -23,18 +23,19 @@ exports.onmessage = async (data, ws, sockets) => {
 }
 
 exports.onpong = (ws) => {
-  console.log('Ping received')
   ws.isAlive = true;
+  console.log('Pong received from', ws.userId);
 }
 
 exports.onclose = (ws, sockets) => {
-  sockets.disconnectFromRoom(ws);
+  sockets.disconnectFromRooms(ws);
+  // ws = null;
 }
 
 exports.pingInterval = (wss) => setInterval(() => {
-  wss.getWss().clients.forEach(client => {
+  wss.clients.forEach(client => {
     if (client.isAlive === false) {
-      console.log('Terminating connection.');
+      console.log('Terminating connection with', client.userId);
       return client.terminate();
     }
     client.isAlive = false;

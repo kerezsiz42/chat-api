@@ -12,14 +12,13 @@ const sockets = new Sockets();
 
 server.ws('/', ws => {
   ws.userId = null;
-  ws.chatId = null;
   ws.isAlive = true;
-  
-  socketCtl.pingInterval(wss);
 
   ws.on('message', data => socketCtl.onmessage(data, ws, sockets));
   ws.on('pong', () => socketCtl.onpong(ws));
   ws.on('close', () => socketCtl.onclose(ws, sockets));
 });
+
+socketCtl.pingInterval(wss.getWss());
 
 module.exports = server;

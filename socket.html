@@ -24,16 +24,14 @@ const login = (username, password) => {
   });
 }
 
-const connectToServer = (token, chatId) => {
-  const ws = new WebSocket('ws://192.168.100.7');
+let ws;
 
-  ws.addEventListener('open', () => {
-    ws.send(JSON.stringify({token, chatId}));
-  });
+const connectToServer = (ws, url, token) => {
+  ws = new WebSocket(url);
 
-  ws.addEventListener('ping', () => {
-    console.log('ping');
-  });
+  ws.onopen = () => {
+    ws.send(JSON.stringify({token}));
+  }
 
   ws.onmessage = (e) => {
     const data = JSON.parse(e.data);
@@ -45,13 +43,15 @@ const connectToServer = (token, chatId) => {
   }
 
   document.querySelector('button').addEventListener('click', () => {
-    ws.send(JSON.stringify({chatId, payload: document.querySelector('input').value}));
+    ws.send(JSON.stringify({chatId: '5ef1d1c43695081c38959cc6', payload: document.querySelector('input').value}));
   });
 }
 
 const init = async (username, password) => {
+  let url = 'ws://192.168.100.7';
+
   const token = await login(username, password);
-  connectToServer(token, '5eec51e4a088e416bc31e863');
+  connectToServer(ws, url, token);
 }
 
 

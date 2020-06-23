@@ -5,15 +5,18 @@ class Sockets {
     this.data = {};
   }
 
-  connectToRoom(chatId, ws) {
+  connectToRooms(ws) {
     return new Promise(async (resolve, reject) => {
       try {
-        await Chat.isMember(ws.userId, chatId);
-        if(!this.data.hasOwnProperty(chatId)) {
-          this.data[chatId] = {};
-        }
-        this.data[chatId][ws.userId] = ws;
-        ws.chatId = chatId;
+        ws.chatIds = [];
+        const chats = await Chat.getChatsOfUser(ws.userId);
+        chats.forEach(chat => {
+          ws.chatIds.push(chat._id.toString());
+          if(!this.data.hasOwnProperty(chat._id)) {
+            this.data[chat._id] = {};
+          }
+          this.data[chat._id][ws.userId] = ws;
+        });
         resolve('Client connected.');
       } catch(err) {
         reject(err);
@@ -34,29 +37,30 @@ class Sockets {
     }
   }
 
-  disconnectFromRoom(ws) {
+  disconnectFromRooms(ws) {
     try {
-      delete this.data[ws.chatId][ws.userId];
-      if(this.isChatEmpty(ws.chatId)) {
-        delete this.data[ws.chatId];
-      }
-      ws.chatId = null;
+      ws.chatIds.forEach(chatId => {
+        delete this.data[chatId][ws.userId];
+        if(this.isChatEmpty(chatId)) {
+          delete this.data[chatId];
+        }
+      });
+      console.log(this.data);
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
   }
 
   handleMessage(chatId, payload, ws) {
     return new Promise(async (resolve, reject) => {
       try {
+        if(!ws.chatIds.includes(chatId)) {
+          reject('Unauthorized or chat does not exist.');
+        }
         if(payload == undefined || payload == '') {
           reject('No payload.');
         }
-        if(ws.chatId != chatId) {
-          this.disconnectFromRoom(ws);
-          await this.connectToRoom(chatId, ws);
-        }
-        const message = await Chat.addMessage(ws.userId, ws.chatId, payload);
+        const message = await Chat.addMessage(ws.userId, chatId, payload);
         resolve(message);
       } catch(err) {
         reject(err);

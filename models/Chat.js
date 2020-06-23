@@ -1,14 +1,13 @@
 const chatsCollection = require('../db').db().collection('chats');
 const ObjectID = require('mongodb').ObjectID;
+const validator = require('validator');
 
 class Chat {
   static create(chatName, userId) {
     return new Promise(async (resolve, reject) => {
       try {
-        const isNameExisting = await chatsCollection.findOne({chatName});
-        if(isNameExisting) {
-          reject('Chat room with the same name already exists.');
-        } else {
+        const errors = await this.validateChatName(newChatName);
+        if(!errors.length) {
           const chat = {
             // Sanitize
             chatName,
@@ -18,10 +17,37 @@ class Chat {
           }
           await chatsCollection.insertOne(chat);
           resolve('New chat room created.');
+        } else {
+          reject(errors);
         }
       } catch(err) {
         reject(err);
       }
+    });
+  }
+
+  static validateChatName(chatName) {
+    return new Promise(async (resolve, reject) => {
+      const errors = [];
+      if(chatName != '' && chatName.length < 4) {
+        errors.push('Chat name should be at least 4 characters long.');
+      }
+      if(chatName.length > 30) {
+        errors.push('Chat name cannot exceed length of 30 characters.');
+      }
+      if(chatName == '') {
+        errors.push('You must provide a chat name.');
+      }
+      if(chatName != '' && !validator.isAlphanumeric(chatName)) {
+        errors.push('Chat name can contain only letters and numbers.');
+      }
+      if(chatName.length > 2 && chatName.length < 31 && validator.isAlphanumeric(chatName)) {
+        const chatNameExists = await chatsCollection.findOne({chatName});
+        if(chatNameExists) {
+          errors.push('This chat name is already taken.');
+        }
+      }
+      resolve(errors);
     });
   }
 
@@ -181,6 +207,30 @@ class Chat {
             reject('Invalid input.');
           }
           resolve(chat.messages.slice(index - messageCount, index));
+        }
+      } catch {
+        reject('Please try again later.');
+      }
+    });
+  }
+
+  static changeChatName(chatId, newChatName) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Sanitize?
+        if(typeof(newChatName) != 'string') {
+          newChatName = '';
+        }
+        newChatName.trim();
+        const errors = await this.validateChatName(newChatName);
+        if(!errors.length) {
+          await chatsCollection.updateOne(
+            {_id: new ObjectID(chatId)},
+            {$set: {chatName: newChatName}}
+          );
+          resolve('Chat name changed.');
+        } else {
+          reject(errors);
         }
       } catch {
         reject('Please try again later.');

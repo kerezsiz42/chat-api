@@ -65,3 +65,21 @@ exports.sendMessage = async (req, res) => {
     res.json({error});
   }
 }
+
+exports.changeChatName = async (req, res) => {
+  try {
+    const success = await Chat.changeChatName(req.body.chatId, req.body.newChatName);
+    res.json({success});
+  } catch(error) {
+    res.json({error});
+  }
+}
+
+exports.findById = async (req, res) => {
+  try {
+    const success = await Chat.findById(req.body.chatId);
+    res.json({success});
+  } catch(error) {
+    res.json({error});
+  }
+}
