@@ -25,6 +25,7 @@ const login = (username, password) => {
 }
 
 let ws;
+let authenticated = false;
 
 const connectToServer = (ws, url, token) => {
   ws = new WebSocket(url);
@@ -36,14 +37,20 @@ const connectToServer = (ws, url, token) => {
   ws.onmessage = (e) => {
     const data = JSON.parse(e.data);
     console.log(data);
+    if(authenticated == false && data.success != undefined) {
+      authenticated = true;
+      ws.send(JSON.stringify({messagesCount: 3, chatId: '5eec51e4a088e416bc31e863'}))
+    }
   }
 
   ws.onclose = () => {
     console.log('Connection closed.');
+    ws = null;
+    setTimeout(() => connectToServer(ws, url, token), 3000);
   }
 
   document.querySelector('button').addEventListener('click', () => {
-    ws.send(JSON.stringify({chatId: '5ef1d1c43695081c38959cc6', payload: document.querySelector('input').value}));
+    ws.send(JSON.stringify({chatId: '5eec51e4a088e416bc31e863', payload: document.querySelector('input').value}));
   });
 }
 

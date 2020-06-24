@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const Sockets = require('../models/Sockets');
+const { loadLastMessages } = require('../models/Chat');
 
 exports.onmessage = async (data, ws, sockets) => {
   data = JSON.parse(data);
@@ -9,6 +9,9 @@ exports.onmessage = async (data, ws, sockets) => {
       ws.userId = await User.authenticate(data.token);
       const success = await sockets.connectToRooms(ws);
       ws.send(JSON.stringify({success}));
+    } else if(data.messagesCount != undefined) {
+      const messages = await loadLastMessages(data.chatId, data.messagesCount, data.messageTime);
+      ws.send(JSON.stringify({messages}));
     } else {
       const message = await sockets.handleMessage(data.chatId, data.payload, ws);
       const clients = sockets.getClientsInRoom(data.chatId);
@@ -17,7 +20,7 @@ exports.onmessage = async (data, ws, sockets) => {
       });
     }
   } catch(error) {
-    console.log(error);
+    //console.log(error);
     ws.send(JSON.stringify({error}));
   }
 }
@@ -28,6 +31,7 @@ exports.onpong = (ws) => {
 }
 
 exports.onclose = (ws, sockets) => {
+  console.log(`Connection with ${ws.userId} closed.`);
   sockets.disconnectFromRooms(ws);
   // ws = null;
 }
