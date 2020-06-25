@@ -3,7 +3,9 @@ const server = express();
 const wss = require('express-ws')(server);
 const socketCtl = require('./controllers/socketsCtl');
 const Sockets = require('./models/Sockets');
+const cors = require('cors');
 
+server.use(cors());
 server.use(express.urlencoded({extended: true}));
 server.use(express.json());
 server.use('/', require('./router'));

@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { loadLastMessages } = require('../models/Chat');
+const Chat = require('../models/Chat');
 
 exports.onmessage = async (data, ws, sockets) => {
   data = JSON.parse(data);
@@ -10,7 +10,10 @@ exports.onmessage = async (data, ws, sockets) => {
       const success = await sockets.connectToRooms(ws);
       ws.send(JSON.stringify({success}));
     } else if(data.messagesCount != undefined) {
-      const messages = await loadLastMessages(data.chatId, data.messagesCount, data.messageTime);
+      if(!ws.chatIds.includes(data.chatId)) {
+        throw 'Unauthorized or chat does not exist.';
+      }
+      const messages = await Chat.loadLastMessages(data.chatId, data.messagesCount, data.messageTime);
       ws.send(JSON.stringify({messages}));
     } else {
       const message = await sockets.handleMessage(data.chatId, data.payload, ws);
