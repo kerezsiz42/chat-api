@@ -1,7 +1,20 @@
 # Wirebird's Chat API
-The main goal is to create an open-source chat Api that anyone can use and deploy at their on server within minutes using Docker.
+The main goal is to create an open-source chat Api that anyone can use and deploy at their own server within minutes using Docker.
 # Installation
-
+Create a .env file which contains the following fields:
+```
+CONNECTIONSTRING=your_mongodb_connection_string
+PORT=80
+JWTSECRET=your_jwt_secret
+```
+Then pull image from dockerhub:
+```
+sudo docker pull zoltankerezsi/chat-api
+```
+Then run with the environment variables you have specified:
+```
+sudo docker run -it --env-file ./.env -p 80:80 zoltankerezsi/chat-api
+```
 # Usage
 Endpoints are ordered into two distinguished sets, one that is concerned with the interactions of users, and one with chat rooms or conversations.
 
