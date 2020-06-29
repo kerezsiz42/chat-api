@@ -54,7 +54,7 @@ const login = (username, email, password) => {
     });
 }
 ```
-__For all the following requests you should send a valid token which also contains your user id. In case you provide an invalid token the gate middleware will terminate further execution and retreive an {error: 'Invalid token'} message.__
+__For all the following requests you should send a valid token which also contains your user id. In case you provide an invalid token the gate middleware will terminate further execution and retrieve an {error: 'Invalid token'} message.__
 ### Delete account
 This request does also log the user out of each chat it is part of.
 ```js
