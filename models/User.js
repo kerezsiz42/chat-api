@@ -145,7 +145,7 @@ class User {
         if(user) {
           resolve(user);
         } else {
-          reject('User not found or unauthenticated.');
+          reject('User not found.');
         }
       } catch {
         reject('Please try again later.');

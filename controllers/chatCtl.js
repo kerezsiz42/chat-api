@@ -2,8 +2,8 @@ const Chat = require('../models/Chat');
 
 exports.createChat = async (req, res) => {
   try {
-    const result = await Chat.create(req.body.chatName, req.body.userId);
-    res.json({success: result});
+    const success = await Chat.create(req.body.chatName, req.body.userId);
+    res.json({success});
   } catch(error) {
     res.json({error});
   }
@@ -41,8 +41,8 @@ exports.removeUser = async (req, res) => {
 
 exports.getChatsOfUser = async (req, res) => {
   try {
-    const chatIds = await Chat.getChatsOfUser(req.body.userId);
-    res.json({success: chatIds});
+    const success = await Chat.getChatsOfUser(req.body.userId);
+    res.json({success});
   } catch(error) {
     res.json({error});
   }
@@ -50,8 +50,8 @@ exports.getChatsOfUser = async (req, res) => {
 
 exports.loadLastMessages = async (req, res) => {
   try {
-    const arrayOfMessages = await Chat.loadLastMessages(req.body.chatId, req.body.messageCount, req.body.messageTime);
-    res.json({success: arrayOfMessages});
+    const success = await Chat.loadLastMessages(req.body.chatId, req.body.messageCount, req.body.messageTime);
+    res.json({success});
   } catch(error) {
     res.json({error});
   }

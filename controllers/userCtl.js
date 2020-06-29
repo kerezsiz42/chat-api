@@ -73,7 +73,7 @@ exports.searchByUsername = async (req, res) => {
 
 exports.findById = async (req, res) => {
   try {
-    const success = await User.findById(req.body.otherUser);
+    const success = await User.findById(req.body.otherUserId);
     res.json({success});
   } catch(error) {
     res.json({error})
