@@ -16,39 +16,37 @@ class Chat {
             time: new Date()
           }
           await chatsCollection.insertOne(chat);
-          resolve('New chat room created.');
+          resolve(['New chat room created.']);
         } else {
           reject(errors);
         }
-      } catch(err) {
-        reject(err);
+      } catch {
+        reject(['Error inside Chat.create().']);
       }
     });
   }
 
-  static validateChatName(chatName) {
-    return new Promise(async (resolve, reject) => {
-      const errors = [];
-      if(chatName != '' && chatName.length < 4) {
-        errors.push('Chat name should be at least 4 characters long.');
+  static async validateChatName(chatName) {
+    const errors = [];
+    if(chatName != '' && chatName.length < 4) {
+      errors.push('Chat name should be at least 4 characters long.');
+    }
+    if(chatName.length > 30) {
+      errors.push('Chat name cannot exceed length of 30 characters.');
+    }
+    if(chatName == '') {
+      errors.push('You must provide a chat name.');
+    }
+    if(chatName != '' && !validator.isAlphanumeric(chatName)) {
+      errors.push('Chat name can contain only letters and numbers.');
+    }
+    if(chatName.length > 2 && chatName.length < 31 && validator.isAlphanumeric(chatName)) {
+      const chatNameExists = await chatsCollection.findOne({chatName});
+      if(chatNameExists) {
+        errors.push('This chat name is already taken.');
       }
-      if(chatName.length > 30) {
-        errors.push('Chat name cannot exceed length of 30 characters.');
-      }
-      if(chatName == '') {
-        errors.push('You must provide a chat name.');
-      }
-      if(chatName != '' && !validator.isAlphanumeric(chatName)) {
-        errors.push('Chat name can contain only letters and numbers.');
-      }
-      if(chatName.length > 2 && chatName.length < 31 && validator.isAlphanumeric(chatName)) {
-        const chatNameExists = await chatsCollection.findOne({chatName});
-        if(chatNameExists) {
-          errors.push('This chat name is already taken.');
-        }
-      }
-      resolve(errors);
-    });
+    }
+    return errors;
   }
 
   static delete(chatId) {
@@ -58,12 +56,12 @@ class Chat {
           {_id: new ObjectID(chatId)}
         );
         if(result.deletedCount) {
-          resolve('Deleted chat room.');
+          resolve(['Deleted chat room.']);
         } else {
-          reject('Error while deleting chat room.');
+          reject(['Error while deleting chat room.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.delete().']);
       }
     });
   }
@@ -76,12 +74,12 @@ class Chat {
           {$addToSet: {members: new ObjectID(userId)}}
         );
         if(result.modifiedCount) {
-          resolve('New user added to chat room.');
+          resolve(['New user added to chat room.']);
         } else {
-          reject('User is already a member of that chat room.');
+          reject(['User is already a member of that chat room.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.addUser().']);
       }
     });
   }
@@ -97,10 +95,10 @@ class Chat {
         if(chat.value) {
           resolve(chat.value.members.length);
         } else {
-          reject('User is not a member of that chat room.');
+          reject(['You are not member of that chat room.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.leave().']);
       }
     });
   }
@@ -113,12 +111,12 @@ class Chat {
           {projection: {messages: 0}}
         );
         if(chat) {
-          resolve('User is part of this chat.');
+          resolve(['User is part of this chat.']);
         } else {
-          reject('You have no permission to access this chat room.');
+          reject(['You have no permission to access this chat room.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.isMember().']);
       }
     });
   }
@@ -132,7 +130,7 @@ class Chat {
         ).toArray();
         resolve(array);
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.getChatsOfUser().']);
       }
     })
   }
@@ -147,10 +145,10 @@ class Chat {
         if(chat) {
           resolve(chat);
         } else {
-          reject('Chat not found.');
+          reject(['Chat not found.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.findById().']);
       }
     });
   }
@@ -171,10 +169,10 @@ class Chat {
         if(result.modifiedCount) {
           resolve(data);
         } else {
-          reject('Error while trying to save message.');
+          reject(['Error while trying to save message.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.addMessage().']);
       }
     });
   }
@@ -187,7 +185,7 @@ class Chat {
         );
         const length = chat.messages.length;
         if(messageCount > length) {
-          reject('Invalid input.');
+          reject(['Invalid input.']);
         }
         if(messageCount == undefined) {
           messageCount = 1;
@@ -204,12 +202,12 @@ class Chat {
             }
           }
           if(messageCount > index || index == -1) {
-            reject('Invalid input.');
+            reject(['Invalid input.']);
           }
           resolve(chat.messages.slice(index - messageCount, index));
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.loadLastMessages().']);
       }
     });
   }
@@ -228,12 +226,12 @@ class Chat {
             {_id: new ObjectID(chatId)},
             {$set: {chatName: newChatName}}
           );
-          resolve('Chat name changed.');
+          resolve(['Chat name changed.']);
         } else {
           reject(errors);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside Chat.changeChatName().']);
       }
     });
   }

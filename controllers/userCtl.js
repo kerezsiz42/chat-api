@@ -17,8 +17,8 @@ exports.gate = async (req, res, next) => {
       req.body.userId = await User.authenticate(req.body.token);
       next();
     } else {
-      req.body = await User.login(req.body);
-      res.json({token: jwt.sign({_id: req.body._id}, process.env.JWTSECRET, {expiresIn: '7d'})});
+      const userId = await User.login(req.body.username, req.body.email, req.body.password);
+      res.json({token: jwt.sign({_id: userId}, process.env.JWTSECRET, {expiresIn: '7d'})});
     }
   } catch(error) {
     res.json({error});

@@ -1,38 +1,41 @@
 const usersCollection = require('../db').db().collection('users');
 const chatsCollection = require('../db').db().collection('chats');
-// try the same with regular expressions in the future
 const validator = require('validator');
 const bcrypt = require('bcrypt');
 const ObjectID = require('mongodb').ObjectID;
 const jwt = require('jsonwebtoken');
 
 class User {
-  static validateUsername(username) {
-    return new Promise(async (resolve, reject) => {
-      const errors = [];
-      if(username != '' && username.length < 4) {
-        errors.push('Username should be at least 4 characters long.');
+  static async validateUsername(username) {
+    if(typeof(username) != 'string') {
+      username = '';
+    }
+    const errors = [];
+    if(username != '' && username.length < 4) {
+      errors.push('Username should be at least 4 characters long.');
+    }
+    if(username.length > 30) {
+      errors.push('Username cannot exceed length of 30 characters.');
+    }
+    if(username == '') {
+      errors.push('You must provide a username.');
+    }
+    if(username != '' && !validator.isAlphanumeric(username)) {
+      errors.push('Username can contain only letters and numbers.');
+    }
+    if(username.length > 2 && username.length < 31 && validator.isAlphanumeric(username)) {
+      const usernameExists = await usersCollection.findOne({username});
+      if(usernameExists) {
+        errors.push('This username is already taken.');
       }
-      if(username.length > 30) {
-        errors.push('Username cannot exceed length of 30 characters.');
-      }
-      if(username == '') {
-        errors.push('You must provide a username.');
-      }
-      if(username != '' && !validator.isAlphanumeric(username)) {
-        errors.push('Username can contain only letters and numbers.');
-      }
-      if(username.length > 2 && username.length < 31 && validator.isAlphanumeric(username)) {
-        const usernameExists = await usersCollection.findOne({username});
-        if(usernameExists) {
-          errors.push('This username is already taken.');
-        }
-      }
-      resolve(errors);
-    });
+    }
+    return errors;
   }
 
   static validatePassword(password) {
+    if(typeof(password) != 'string') {
+      password = '';
+    }
     const errors = [];
     if(password == '') {
       errors.push('You must provide a password.');
@@ -46,46 +49,26 @@ class User {
     return errors;
   }
   
-  static validateEmail(email) {
-    return new Promise(async (resolve, reject) => {
-      const errors = [];
-      if(validator.isEmail(email)) {
-        const emailExists = await usersCollection.findOne({email});
-        if(emailExists) {
-          errors.push('This email is already in use.');
-        }
-      }
-      if(!validator.isEmail(email)) {
-        errors.push('You must provide a valid email.');
-      }
-      resolve(errors);
-    });
-  }
-
-  static cleanUp(data) {
-    let { username, email, password } = data;
-    if(typeof(username) != 'string') {
-      username = '';
-    }
+  static async validateEmail(email) {
     if(typeof(email) != 'string') {
       email = '';
     }
-    if(typeof(password) != 'string') {
-      password = '';
+    const errors = [];
+    if(validator.isEmail(email)) {
+      const emailExists = await usersCollection.findOne({email});
+      if(emailExists) {
+        errors.push('This email is already in use.');
+      }
     }
-    username.trim();
-    email.trim().toLowerCase();
-    return {
-      username,
-      email,
-      password
+    if(!validator.isEmail(email)) {
+      errors.push('You must provide a valid email.');
     }
+    return errors;
   }
-
+  
   static register(data) {
     return new Promise(async (resolve, reject) => {
       let errors = [];
-      data = this.cleanUp(data);
       errors = errors.concat(this.validatePassword(data.password));
       errors = errors.concat(await this.validateEmail(data.email));
       errors = errors.concat(await this.validateUsername(data.username));
@@ -93,26 +76,24 @@ class User {
       if(!errors.length) {
         data.password = bcrypt.hashSync(data.password, 10);
         await usersCollection.insertOne(data);
-        resolve('Successfully registered user.');
+        resolve(['Successfully registered user.']);
       } else {
         reject(errors);
       }
     });
   }
 
-  static login(data) {
+  static login(username, email, password) {
     return new Promise(async (resolve, reject) => {
-      data = this.cleanUp(data);
       try {
-        const attemptedUser = await usersCollection.findOne({$or: [{username: data.username}, {email: data.email}]});
-        if(attemptedUser && bcrypt.compareSync(data.password, attemptedUser.password)) {
-          attemptedUser.password = undefined;
-          resolve(attemptedUser);
+        const attemptedUser = await usersCollection.findOne({$or: [{username}, {email}]});
+        if(attemptedUser && bcrypt.compareSync(password, attemptedUser.password)) {
+          resolve(attemptedUser._id);
         } else {
-          reject('Invalid username or password.');
+          reject(['Invalid username or password.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.login().']);
       }
     });
   }
@@ -127,10 +108,10 @@ class User {
         if(user) {
           resolve(user._id.toString());
         } else {
-          reject('User does not exist.');
+          reject(['User does not exist.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.findByUsername().']);
       }
     });
   }
@@ -145,10 +126,10 @@ class User {
         if(user) {
           resolve(user);
         } else {
-          reject('User not found.');
+          reject(['User not found.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.findById().']);
       }
     });
   }
@@ -158,12 +139,12 @@ class User {
       try {
         const result = await usersCollection.deleteOne({_id: new ObjectID(userId)});
         if(result.deletedCount) {
-          resolve('Successfully deleted user.');
+          resolve(['Successfully deleted user.']);
         } else {
-          reject('Error while trying to delete user.');
+          reject(['Error while trying to delete user.']);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.delete().']);
       }
     });
   }
@@ -172,22 +153,18 @@ class User {
     return new Promise(async (resolve, reject) => {
       try {
         // Sanitize?
-        if(typeof(newUsername) != 'string') {
-          newUsername = '';
-        }
-        newUsername.trim();
         const errors = await this.validateUsername(newUsername);
         if(!errors.length) {
           await usersCollection.updateOne(
             {_id: new ObjectID(userId)},
             {$set: {username: newUsername}}
           );
-          resolve('Username changed.');
+          resolve(['Username changed.']);
         } else {
           reject(errors);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.changeUsername().']);
       }
     });
   }
@@ -195,9 +172,6 @@ class User {
   static changePassword(userId, newPassword) {
     return new Promise(async (resolve, reject) => {
       try {
-        if(typeof(newPassword) != 'string') {
-          newPassword = '';
-        }
         const errors = this.validatePassword(newPassword);
         if(!errors.length) {
           newPassword = bcrypt.hashSync(newPassword, 10);
@@ -205,12 +179,12 @@ class User {
             {_id: new ObjectID(userId)},
             {$set: {password: newPassword}}
           );
-          resolve('Password changed.');
+          resolve(['Password changed.']);
         } else {
           reject(errors);
         }
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.changePassword().']);
       }
     });
   }
@@ -227,7 +201,7 @@ class User {
         ]).toArray();
         resolve(result);
       } catch {
-        reject('Please try again later.');
+        reject(['Error inside User.searchByUsername().']);
       }
     });
   }
@@ -237,14 +211,14 @@ class User {
       try {
         const userId = jwt.verify(token, process.env.JWTSECRET, (error, decoded) => {
           if(error) {
-            throw 'Invalid token';
+            reject(['Invalid token']);
           }
           return decoded._id;
         });
         await User.findById(userId);
         resolve(userId);
-      } catch(error) {
-        reject(error);
+      } catch {
+        reject(['Error inside User.authenticate().']);
       }
     });
   }
