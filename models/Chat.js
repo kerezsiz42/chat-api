@@ -6,7 +6,7 @@ class Chat {
   static create(chatName, userId) {
     return new Promise(async (resolve, reject) => {
       try {
-        const errors = await this.validateChatName(newChatName);
+        const errors = await this.validateChatName(chatName);
         if(!errors.length) {
           const chat = {
             // Sanitize
@@ -124,10 +124,11 @@ class Chat {
   static getChatsOfUser(userId) {
     return new Promise(async (resolve, reject) => {
       try {
-        const array = await chatsCollection.find(
-          {members: new ObjectID(userId)},
-          {projection: {messages: 0}}
-        ).toArray();
+        const array = await chatsCollection.aggregate([
+          {$match: {members: new ObjectID(userId)}},
+          {$lookup: {from: 'users', localField: 'members', foreignField: '_id', as: 'members'}},
+          {$project: {messages: 0, members: {password: 0, email: 0}}}
+        ]).toArray();
         resolve(array);
       } catch {
         reject(['Error inside Chat.getChatsOfUser().']);
@@ -178,6 +179,7 @@ class Chat {
   }
 
   static loadLastMessages(chatId, messageCount, messageTime) {
+    // Rewrite later with projection
     return new Promise(async (resolve, reject) => {
       try {
         const chat = await chatsCollection.findOne(
